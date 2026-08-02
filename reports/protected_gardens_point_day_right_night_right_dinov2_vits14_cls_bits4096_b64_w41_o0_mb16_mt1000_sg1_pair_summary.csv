@@ -1,0 +1,3 @@
+pair_set,n_pairs,components_per_image,match_count_mean,match_count_q50,match_count_q90,match_count_q95,match_count_max,helper_only_count_mean,helper_only_count_q50,helper_only_count_q90,helper_only_count_q95,helper_only_count_max,penalty_mean,penalty_q50,penalty_q90
+positive_place,400,1,0.2,0.0,1.0,1.0,1.0,0.0,0.0,0.0,0.0,0.0,1000000000000.0,1000000000000.0,1000000000000.0
+negative_place,400,1,0.0025,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,1000000000000.0,1000000000000.0,1000000000000.0
