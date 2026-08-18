@@ -6,7 +6,7 @@ import math
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 import torch
@@ -132,12 +132,18 @@ def verify_component(code: np.ndarray, helper: FastKeyedHelper, *, master_secret
 
 def helper_only_component(code: np.ndarray, helper: FastKeyedHelper) -> Tuple[bool, int]:
     if not helper.public_geometry:
-        return False, 10**12
+        raise ValueError("helper-only alignment score is unavailable for secret geometry")
     _secret_hat, decode_ok, penalty, _corrected_total, _max_corrected, _overfull = decode_component(code, helper)
     return bool(decode_ok), penalty
 
 
-def match_components(db_helpers: Sequence[FastKeyedHelper], query_codes: np.ndarray, *, master_secret: str) -> Tuple[int, int, int]:
+def match_components(
+    db_helpers: Sequence[FastKeyedHelper],
+    query_codes: np.ndarray,
+    *,
+    master_secret: str,
+) -> Tuple[int, Optional[int], Optional[int]]:
+    helper_only_available = all(helper.public_geometry for helper in db_helpers)
     verified_count = 0
     helper_only_count = 0
     best_penalty = 10**12
@@ -152,11 +158,14 @@ def match_components(db_helpers: Sequence[FastKeyedHelper], query_codes: np.ndar
         component_helper_only_q = None
         for q_idx, q_code in enumerate(query_codes):
             verified, verified_penalty = verify_component(q_code, helper, master_secret=master_secret)
-            helper_only, helper_only_penalty = helper_only_component(q_code, helper)
+            if helper_only_available:
+                helper_only, helper_only_penalty = helper_only_component(q_code, helper)
+            else:
+                helper_only, helper_only_penalty = False, None
             if verified_penalty < component_best_verified_penalty:
                 component_best_verified_penalty = verified_penalty
                 component_verified_q = q_idx
-            if helper_only_penalty < component_best_helper_only_penalty:
+            if helper_only_penalty is not None and helper_only_penalty < component_best_helper_only_penalty:
                 component_best_helper_only_penalty = helper_only_penalty
                 component_helper_only_q = q_idx
             if helper_only:
@@ -172,11 +181,14 @@ def match_components(db_helpers: Sequence[FastKeyedHelper], query_codes: np.ndar
             verified_count += 1
             if component_verified_q is not None:
                 used_verified_query_components.add(component_verified_q)
-        if component_helper_only:
+        if helper_only_available and component_helper_only:
             helper_only_count += 1
             if component_helper_only_q is not None:
                 used_helper_only_query_components.add(component_helper_only_q)
-        best_penalty = min(best_penalty, component_best_helper_only_penalty)
+        if helper_only_available:
+            best_penalty = min(best_penalty, component_best_helper_only_penalty)
+    if not helper_only_available:
+        return verified_count, None, None
     return verified_count, helper_only_count, int(best_penalty)
 
 
@@ -257,8 +269,10 @@ def evaluate_pair_set(name: str, pairs: Sequence[Tuple[int, int]], db_helpers, q
     for db_idx, query_idx in pairs:
         count, helper_only_count, penalty = match_components(db_helpers[db_idx], query_bits[query_idx], master_secret=master_secret)
         counts.append(count)
-        helper_only_counts.append(helper_only_count)
-        penalties.append(penalty)
+        if helper_only_count is not None:
+            helper_only_counts.append(helper_only_count)
+        if penalty is not None:
+            penalties.append(penalty)
     count_summary = summarize(counts)
     helper_only_summary = summarize(helper_only_counts)
     penalty_summary = summarize(penalties)
@@ -294,6 +308,10 @@ def write_csv(path: Path, rows: List[dict], fieldnames: Sequence[str]) -> None:
 
 
 def make_report(path: Path, *, args, summary_rows: List[dict], threshold_rows: List[dict], leakage_rows: List[dict]) -> None:
+    def fmt(value: object, digits: int) -> str:
+        number = float(value)
+        return "N/A" if math.isnan(number) else f"{number:.{digits}f}"
+
     pair_labels = {
         "positive_place": "одно место",
         "negative_place": "разные места",
@@ -327,10 +345,10 @@ def make_report(path: Path, *, args, summary_rows: List[dict], threshold_rows: L
     for row in summary_rows:
         pair_set = pair_labels.get(str(row["pair_set"]), row["pair_set"])
         lines.append(
-            f"| {pair_set} | {row['n_pairs']} | {float(row['match_count_mean']):.3f} | "
-            f"{float(row['helper_only_count_mean']):.3f} | {float(row['match_count_q90']):.3f} | "
-            f"{float(row['helper_only_count_q90']):.3f} | {float(row['match_count_max']):.3f} | "
-            f"{float(row['helper_only_count_max']):.3f} |"
+            f"| {pair_set} | {row['n_pairs']} | {fmt(row['match_count_mean'], 3)} | "
+            f"{fmt(row['helper_only_count_mean'], 3)} | {fmt(row['match_count_q90'], 3)} | "
+            f"{fmt(row['helper_only_count_q90'], 3)} | {fmt(row['match_count_max'], 3)} | "
+            f"{fmt(row['helper_only_count_max'], 3)} |"
         )
 
     lines += [
@@ -342,10 +360,10 @@ def make_report(path: Path, *, args, summary_rows: List[dict], threshold_rows: L
     ]
     for row in threshold_rows:
         lines.append(
-            f"| {row['min_verified_components']} | {float(row['tpr']):.4f} | "
-            f"{float(row['far']):.4f} | {float(row['frr']):.4f} | "
-            f"{float(row['helper_only_tpr']):.4f} | {float(row['helper_only_far']):.4f} | "
-            f"{float(row['helper_only_frr']):.4f} |"
+            f"| {row['min_verified_components']} | {fmt(row['tpr'], 4)} | "
+            f"{fmt(row['far'], 4)} | {fmt(row['frr'], 4)} | "
+            f"{fmt(row['helper_only_tpr'], 4)} | {fmt(row['helper_only_far'], 4)} | "
+            f"{fmt(row['helper_only_frr'], 4)} |"
         )
     lines += [
         "",
@@ -361,7 +379,7 @@ def make_report(path: Path, *, args, summary_rows: List[dict], threshold_rows: L
         "|---|---:|",
     ]
     for row in leakage_rows:
-        lines.append(f"| {row['metric']} | {float(row['value']):.6f} |")
+        lines.append(f"| {row['metric']} | {fmt(row['value'], 6)} |")
     lines += [
         "",
         "## Примечания",
@@ -369,7 +387,8 @@ def make_report(path: Path, *, args, summary_rows: List[dict], threshold_rows: L
         "- `TPR` -- доля пар одного места, прошедших порог по числу компонент.",
         "- `FAR` -- доля удаленных пар или пар разных мест, прошедших тот же порог.",
         "- Компонентная проверка использует сохраненный тег; предполагаемое состояние базы содержит только соль, вспомогательные данные, тег и публичные параметры политики.",
-        "- Метрики по одним вспомогательным данным оценивают автономный сигнал проверки принадлежности, который текущая конструкция раскрывает при выбранной публичной или секретной геометрии.",
+        "- При публичной геометрии метрики по одним вспомогательным данным оценивают автономный сигнал проверки принадлежности.",
+        "- При секретной геометрии прямой тест выравнивания не вычисляется без секретных позиций, поэтому соответствующие метрики обозначаются как N/A.",
         "",
     ]
     path.write_text("\n".join(lines), encoding="utf-8")
@@ -386,6 +405,7 @@ def parse_args():
     parser.add_argument("--gp-query-sequence", default="night_right")
     parser.add_argument("--reports-dir", type=Path, default=ROOT / "reports")
     parser.add_argument("--model-name", default="dinov2_vits14", choices=["dinov2_vits14", "dinov2_vitb14"])
+    parser.add_argument("--device", default="cpu", help="PyTorch device; CPU is the canonical reproducibility mode.")
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--component-mode", choices=["cls", "regional"], default="regional")
     parser.add_argument("--component-grid", type=int, default=4)
@@ -422,7 +442,7 @@ def main() -> int:
     query_paths = [record.path for record in queries]
 
     print("Вычисление дескрипторов DINOv2...")
-    encoder = DinoV2TokenEncoder(args.model_name, image_size=args.image_size)
+    encoder = DinoV2TokenEncoder(args.model_name, device=args.device, image_size=args.image_size)
     db_cls, db_tokens = encoder.encode_paths(db_paths, batch_size=args.batch_size)
     query_cls, query_tokens = encoder.encode_paths(query_paths, batch_size=args.batch_size)
 

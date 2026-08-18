@@ -1,0 +1,201 @@
+{
+  "figure": "real_visual_example.png",
+  "figure_sha256": "783fdac530cfbcdde5b8ffef4a7500a61f04a927ade4cdcadea0899046a51eba",
+  "dataset": "Gardens Point Walking",
+  "database_image": "day_right/Image001.jpg",
+  "query_image": "night_right/Image001.jpg",
+  "matching_rule": "fixed_same_grid_cell_for_qualitative_overlay",
+  "model_name": "dinov2_vits14",
+  "image_size": 224,
+  "grid": 4,
+  "components": 16,
+  "component_bits": 4096,
+  "projection_seed": 42,
+  "secret_geometry": true,
+  "blocks": 64,
+  "block_width": 41,
+  "overlap": 0,
+  "max_errors_per_block": 16,
+  "max_total_errors": 1000,
+  "verified_count": 13,
+  "matches": [
+    0,
+    1,
+    1,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "component_results": [
+    {
+      "database_component": 0,
+      "query_component": 0,
+      "verified": false,
+      "decode_ok": false,
+      "tag_ok": false,
+      "corrected_observations": 681,
+      "max_corrected_in_block": 18,
+      "overfull_blocks": 1
+    },
+    {
+      "database_component": 1,
+      "query_component": 1,
+      "verified": true,
+      "decode_ok": true,
+      "tag_ok": true,
+      "corrected_observations": 520,
+      "max_corrected_in_block": 15,
+      "overfull_blocks": 0
+    },
+    {
+      "database_component": 2,
+      "query_component": 2,
+      "verified": true,
+      "decode_ok": true,
+      "tag_ok": true,
+      "corrected_observations": 645,
+      "max_corrected_in_block": 16,
+      "overfull_blocks": 0
+    },
+    {
+      "database_component": 3,
+      "query_component": 3,
+      "verified": false,
+      "decode_ok": false,
+      "tag_ok": false,
+      "corrected_observations": 684,
+      "max_corrected_in_block": 18,
+      "overfull_blocks": 1
+    },
+    {
+      "database_component": 4,
+      "query_component": 4,
+      "verified": false,
+      "decode_ok": false,
+      "tag_ok": false,
+      "corrected_observations": 707,
+      "max_corrected_in_block": 17,
+      "overfull_blocks": 2
+    },
+    {
+      "database_component": 5,
+      "query_component": 5,
+      "verified": true,
+      "decode_ok": true,
+      "tag_ok": true,
+      "corrected_observations": 561,
+      "max_corrected_in_block": 16,
+      "overfull_blocks": 0
+    },
+    {
+      "database_component": 6,
+      "query_component": 6,
+      "verified": true,
+      "decode_ok": true,
+      "tag_ok": true,
+      "corrected_observations": 555,
+      "max_corrected_in_block": 14,
+      "overfull_blocks": 0
+    },
+    {
+      "database_component": 7,
+      "query_component": 7,
+      "verified": true,
+      "decode_ok": true,
+      "tag_ok": true,
+      "corrected_observations": 632,
+      "max_corrected_in_block": 15,
+      "overfull_blocks": 0
+    },
+    {
+      "database_component": 8,
+      "query_component": 8,
+      "verified": true,
+      "decode_ok": true,
+      "tag_ok": true,
+      "corrected_observations": 560,
+      "max_corrected_in_block": 15,
+      "overfull_blocks": 0
+    },
+    {
+      "database_component": 9,
+      "query_component": 9,
+      "verified": true,
+      "decode_ok": true,
+      "tag_ok": true,
+      "corrected_observations": 476,
+      "max_corrected_in_block": 12,
+      "overfull_blocks": 0
+    },
+    {
+      "database_component": 10,
+      "query_component": 10,
+      "verified": true,
+      "decode_ok": true,
+      "tag_ok": true,
+      "corrected_observations": 450,
+      "max_corrected_in_block": 13,
+      "overfull_blocks": 0
+    },
+    {
+      "database_component": 11,
+      "query_component": 11,
+      "verified": true,
+      "decode_ok": true,
+      "tag_ok": true,
+      "corrected_observations": 570,
+      "max_corrected_in_block": 16,
+      "overfull_blocks": 0
+    },
+    {
+      "database_component": 12,
+      "query_component": 12,
+      "verified": true,
+      "decode_ok": true,
+      "tag_ok": true,
+      "corrected_observations": 535,
+      "max_corrected_in_block": 16,
+      "overfull_blocks": 0
+    },
+    {
+      "database_component": 13,
+      "query_component": 13,
+      "verified": true,
+      "decode_ok": true,
+      "tag_ok": true,
+      "corrected_observations": 519,
+      "max_corrected_in_block": 14,
+      "overfull_blocks": 0
+    },
+    {
+      "database_component": 14,
+      "query_component": 14,
+      "verified": true,
+      "decode_ok": true,
+      "tag_ok": true,
+      "corrected_observations": 491,
+      "max_corrected_in_block": 16,
+      "overfull_blocks": 0
+    },
+    {
+      "database_component": 15,
+      "query_component": 15,
+      "verified": true,
+      "decode_ok": true,
+      "tag_ok": true,
+      "corrected_observations": 532,
+      "max_corrected_in_block": 14,
+      "overfull_blocks": 0
+    }
+  ]
+}

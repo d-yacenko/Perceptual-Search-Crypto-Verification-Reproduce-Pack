@@ -63,6 +63,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--query-start", type=int, default=0)
     parser.add_argument("--selection-mode", choices=["spread", "contiguous"], default="spread")
     parser.add_argument("--model-name", default="dinov2_vits14", choices=["dinov2_vits14", "dinov2_vitb14"])
+    parser.add_argument("--device", default="cpu", help="PyTorch device; CPU is the canonical reproducibility mode.")
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--component-grid", type=int, default=4)
@@ -222,7 +223,7 @@ def main() -> int:
 
     print()
     print("Encoding images with DINOv2...")
-    encoder = DinoV2TokenEncoder(args.model_name, image_size=args.image_size)
+    encoder = DinoV2TokenEncoder(args.model_name, device=args.device, image_size=args.image_size)
     db_cls, db_tokens = encoder.encode_paths(db_paths, batch_size=args.batch_size)
     query_cls, query_tokens = encoder.encode_paths(query_paths, batch_size=args.batch_size)
 

@@ -19,6 +19,8 @@ if str(SRC) not in sys.path:
 from perceptual_crypto import keyed_fe_gen, keyed_verify_with_helper
 
 REPORTS = ROOT / "reports"
+PROVENANCE = ROOT / "MODEL_PROVENANCE.md"
+ARCHITECTURE_FIGURE_SOURCE = ROOT / "latex" / "figures" / "fig01_protected_visual_matching_architecture.svg"
 ARTICLE_CANDIDATES = [
     ROOT / "article18_protected_visual_matching_draft_ru.md",
     ROOT / "latex" / "article18_protected_visual_matching_ru.tex",
@@ -62,6 +64,12 @@ def check_close(label: str, actual: float, expected: float, tol: float = 1e-6) -
 def check_equal(label: str, actual, expected) -> int:
     if actual != expected:
         raise AssertionError(f"{label}: expected {expected!r}, got {actual!r}")
+    return 1
+
+
+def check_nan(label: str, actual: float) -> int:
+    if not np.isnan(float(actual)):
+        raise AssertionError(f"{label}: expected N/A (nan), got {actual}")
     return 1
 
 
@@ -166,9 +174,9 @@ def main() -> int:
             8: {"tpr": 0.5900, "far": 0.0050, "helper_only_tpr": 0.5900, "helper_only_far": 0.0050},
         },
         dino_reg_sg1: {
-            4: {"tpr": 0.8300, "far": 0.0350, "frr": 0.1700, "helper_only_tpr": 0.0, "helper_only_far": 0.0},
-            6: {"tpr": 0.7075, "far": 0.0125, "frr": 0.2925, "helper_only_tpr": 0.0, "helper_only_far": 0.0},
-            8: {"tpr": 0.5950, "far": 0.0025, "frr": 0.4050, "helper_only_tpr": 0.0, "helper_only_far": 0.0},
+            4: {"tpr": 0.8300, "far": 0.0350, "frr": 0.1700, "helper_only_tpr": None, "helper_only_far": None},
+            6: {"tpr": 0.7075, "far": 0.0125, "frr": 0.2925, "helper_only_tpr": None, "helper_only_far": None},
+            8: {"tpr": 0.5950, "far": 0.0025, "frr": 0.4050, "helper_only_tpr": None, "helper_only_far": None},
         },
         dino_cls_sg1: {
             1: {"tpr": 0.2000, "far": 0.0025, "frr": 0.8000},
@@ -188,7 +196,10 @@ def main() -> int:
         for threshold, expected_values in by_threshold.items():
             row = threshold_row(prefix, threshold)
             for metric, expected in expected_values.items():
-                checked += check_close(f"{prefix} M>={threshold} {metric}", float(row[metric]), expected)
+                if expected is None:
+                    checked += check_nan(f"{prefix} M>={threshold} {metric}", float(row[metric]))
+                else:
+                    checked += check_close(f"{prefix} M>={threshold} {metric}", float(row[metric]), expected)
 
     expected_leakage = {
         dino_reg_sg0: {
@@ -196,23 +207,23 @@ def main() -> int:
             "helper_only_best_penalty_auc": 0.955175,
         },
         dino_reg_sg1: {
-            "helper_only_component_count_auc": 0.500000,
-            "helper_only_best_penalty_auc": 0.500000,
+            "helper_only_component_count_auc": None,
+            "helper_only_best_penalty_auc": None,
             "verified_component_count_auc": 0.951856,
         },
         dino_cls_sg1: {
-            "helper_only_component_count_auc": 0.500000,
+            "helper_only_component_count_auc": None,
         },
         vit_sg1: {
-            "helper_only_component_count_auc": 0.500000,
+            "helper_only_component_count_auc": None,
             "verified_component_count_auc": 0.890891,
         },
         densenet_sg1: {
-            "helper_only_component_count_auc": 0.500000,
+            "helper_only_component_count_auc": None,
             "verified_component_count_auc": 0.819913,
         },
         resnet_sg1: {
-            "helper_only_component_count_auc": 0.500000,
+            "helper_only_component_count_auc": None,
             "verified_component_count_auc": 0.613234,
         },
     }
@@ -220,7 +231,10 @@ def main() -> int:
     for prefix, expected_values in expected_leakage.items():
         values = leakage(prefix)
         for metric, expected in expected_values.items():
-            checked += check_close(f"{prefix} {metric}", values[metric], expected)
+            if expected is None:
+                checked += check_nan(f"{prefix} {metric}", values[metric])
+            else:
+                checked += check_close(f"{prefix} {metric}", values[metric], expected)
 
     expected_pairs = {
         (dino_reg_sg1, "positive_place"): {
@@ -229,7 +243,7 @@ def main() -> int:
             "match_count_mean": 8.7625,
             "match_count_q90": 15.0,
             "match_count_max": 16.0,
-            "helper_only_count_mean": 0.0,
+            "helper_only_count_mean": None,
         },
         (dino_reg_sg1, "negative_place"): {
             "n_pairs": 400,
@@ -237,7 +251,7 @@ def main() -> int:
             "match_count_mean": 0.4925,
             "match_count_q90": 2.0,
             "match_count_max": 8.0,
-            "helper_only_count_mean": 0.0,
+            "helper_only_count_mean": None,
         },
         (vit_sg1, "positive_place"): {"match_count_mean": 7.4525, "match_count_q90": 12.0},
         (vit_sg1, "negative_place"): {"match_count_mean": 2.3150, "match_count_q90": 5.0},
@@ -250,7 +264,10 @@ def main() -> int:
     for (prefix, pair_set), expected_values in expected_pairs.items():
         row = pair_row(prefix, pair_set)
         for metric, expected in expected_values.items():
-            checked += check_close(f"{prefix} {pair_set} {metric}", float(row[metric]), expected)
+            if expected is None:
+                checked += check_nan(f"{prefix} {pair_set} {metric}", float(row[metric]))
+            else:
+                checked += check_close(f"{prefix} {pair_set} {metric}", float(row[metric]), expected)
 
     # Check the article-facing comparative statements.
     checked += check_equal(
@@ -270,24 +287,82 @@ def main() -> int:
         True,
     )
 
-    checked += check_article_literals(
-        [
-            "TPR = 0.8300",
-            "FAR = 0.0350",
-            "TPR = 0.7075",
-            "FAR = 0.0125",
-            "TPR = 0.5950",
-            "FAR = 0.0025",
-            "0.948994--0.955175",
-            "0.500000",
-            ("`8.7625`", "8.7625"),
-            ("`0.4925`", "0.4925"),
-            "scripts/run_place_keyed_component_experiment.py",
-            "scripts/run_place_torchvision_component_experiment.py",
-        ]
-    )
+    article_source_available = any(path.exists() for path in ARTICLE_CANDIDATES)
+    if article_source_available:
+        checked += check_article_literals(
+            [
+                "TPR = 0.8300",
+                "FAR = 0.0350",
+                "TPR = 0.7075",
+                "FAR = 0.0125",
+                "TPR = 0.5950",
+                "FAR = 0.0025",
+                "0.948994--0.955175",
+                "N/A",
+                ("`8.7625`", "8.7625"),
+                ("`0.4925`", "0.4925"),
+                "scripts/run_place_keyed_component_experiment.py",
+                "scripts/run_place_torchvision_component_experiment.py",
+                "\\widetilde e_b",
+                "\\min(t_b,w-t_b)",
+            ]
+        )
+        if "\\[\ne_b \\le \\tau_{\\text{block}}" in read_article_text_for_checks():
+            raise AssertionError("Article still applies decoder bounds to true e_b instead of observed tilde e_b")
 
     checked += check_core_secret_geometry()
+
+    expected_dinov2_commit = "7b187bd4df8efce2cbcbbb67bd01532c19bf4c9c"
+    expected_dinov2_weights = "b938bf1bc15cd2ec0feacfe3a1bb553fe8ea9ca46a7e1d8d00217f29aef60cd9"
+    encoder_text = (ROOT / "scripts" / "dinov2_encoder.py").read_text(encoding="utf-8")
+    experiment_runner_text = (ROOT / "scripts" / "run_place_keyed_component_experiment.py").read_text(encoding="utf-8")
+    torchvision_runner_text = (ROOT / "scripts" / "run_place_torchvision_component_experiment.py").read_text(encoding="utf-8")
+    if not PROVENANCE.exists():
+        raise AssertionError(f"Missing model provenance file: {PROVENANCE.relative_to(ROOT)}")
+    provenance_text = PROVENANCE.read_text(encoding="utf-8")
+    requirements_text = (ROOT / "requirements.txt").read_text(encoding="utf-8")
+    checked += check_equal("DINOv2 commit pinned in encoder", expected_dinov2_commit in encoder_text, True)
+    checked += check_equal("DINOv2 weight hash pinned in encoder", expected_dinov2_weights in encoder_text, True)
+    checked += check_equal("DINOv2 commit recorded in provenance", expected_dinov2_commit in provenance_text, True)
+    checked += check_equal("DINOv2 weight hash recorded in provenance", expected_dinov2_weights in provenance_text, True)
+    checked += check_equal(
+        "canonical torch/torchvision versions pinned",
+        "torch==2.8.0" in requirements_text and "torchvision==0.23.0" in requirements_text,
+        True,
+    )
+    checked += check_equal(
+        "canonical Python 3.11 CPU mode recorded",
+        "Python 3.11" in provenance_text and "Canonical execution device: CPU" in provenance_text,
+        True,
+    )
+    checked += check_equal(
+        "experiment runners default to canonical CPU mode",
+        'parser.add_argument("--device", default="cpu"' in experiment_runner_text
+        and 'parser.add_argument("--device", default="cpu"' in torchvision_runner_text,
+        True,
+    )
+
+    if article_source_available and "0.500000" in read_article_text_for_checks():
+        raise AssertionError("Article still reports synthetic helper-only AUC=0.500000 for secret geometry")
+
+    if ARCHITECTURE_FIGURE_SOURCE.exists():
+        figure_text = ARCHITECTURE_FIGURE_SOURCE.read_text(encoding="utf-8")
+        checked += check_equal(
+            "architecture figure shows registration, all-to-all verification, and the correct decision",
+            all(
+                literal in figure_text
+                for literal in [
+                    "РЕГИСТРАЦИЯ ЭТАЛОНА",
+                    "ПРОВЕРКА ЗАПРОСА",
+                    "Сопоставление «все со всеми»",
+                    "verified_count ≥ M",
+                    "Majority decoding",
+                ]
+            ),
+            True,
+        )
+        if "M &gt;= Threshold" in figure_text or "Master Secret &amp; Salt" in figure_text:
+            raise AssertionError("Architecture figure still contains a stale decision or master-secret flow")
 
     stale_reports = list(REPORTS.glob("*.md"))
     checked += check_equal("no stale report artifacts", [p.name for p in stale_reports], [])

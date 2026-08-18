@@ -164,6 +164,7 @@ def parse_args():
     parser.add_argument("--gp-query-sequence", default="night_right")
     parser.add_argument("--reports-dir", type=Path, default=ROOT / "reports")
     parser.add_argument("--model-name", choices=["vit_b_16", "resnet50", "densenet121", "mobilenet_v3_large"], default="vit_b_16")
+    parser.add_argument("--device", default="cpu", help="PyTorch device; CPU is the canonical reproducibility mode.")
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--no-pretrained", action="store_true")
     parser.add_argument("--component-mode", choices=["global", "regional"], default="regional")
@@ -201,7 +202,12 @@ def main() -> int:
     query_paths = [record.path for record in queries]
 
     print(f"Вычисление дескрипторов {args.model_name}...")
-    encoder = TorchvisionComponentEncoder(args.model_name, image_size=args.image_size, weights=not args.no_pretrained)
+    encoder = TorchvisionComponentEncoder(
+        args.model_name,
+        device=args.device,
+        image_size=args.image_size,
+        weights=not args.no_pretrained,
+    )
     db_components = encoder.encode_paths(
         db_paths,
         batch_size=args.batch_size,

@@ -1,4 +1,4 @@
 metric,value
-helper_only_component_count_auc,0.5
-helper_only_best_penalty_auc,0.5
+helper_only_component_count_auc,nan
+helper_only_best_penalty_auc,nan
 verified_component_count_auc,0.59875
